@@ -30,9 +30,15 @@ services:
     - mysql
 
 before_install:
-    - if [ "$DEPENDENCIES" = "beta" ]; then composer config minimum-stability beta; fi;
-    - if [ "$DEPENDENCIES" = "alpha" ]; then composer config minimum-stability alpha; fi;
-    - if [ -x .travis/before_install.sh ]; then .travis/before_install.sh; fi;
+    - echo "extension = $MONGO_EXTENSION" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+    - echo 'date.timezone = "Europe/Paris"' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+    - echo 'memory_limit = -1' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+
+before_script:
+  - composer config platform.ext-mongo 1.6.16
+  - if [ "$SYMFONY_VERSION" != "" ]; then travis_wait composer require --no-update $SYMFONY_VERSION; fi;
+  - travis_wait composer update --prefer-dist --no-interaction $COMPOSER_FLAGS
+  - if ! [[ $TRAVIS_PHP_VERSION =~ ^5 ]]; then composer require alcaeus/mongo-php-adapter; fi;
 
 install:
     - if [ -x .travis/install.sh ]; then .travis/install.sh; fi;
