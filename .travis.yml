@@ -32,6 +32,19 @@ before_install:
   - if [ "$SYMFONY_VERSION" != "" ]; then composer require "symfony/${SYMFONY_VERSION}" --no-update; fi;
   - if ! [[ $TRAVIS_PHP_VERSION =~ ^5 ]]; then composer require alcaeus/mongo-php-adapter --no-update; fi;
 
+  - |
+    # php.ini configuration
+    for PHP in $TRAVIS_PHP_VERSION $php_extra; do
+        phpenv global $PHP 2>/dev/null || (cd / && wget https://storage.googleapis.com/travis-ci-language-archives/php/binaries/ubuntu/16.04/x86_64/php-$PHP.tar.bz2 -O - | tar -xj)
+        INI=~/.phpenv/versions/$PHP/etc/conf.d/travis.ini
+        echo date.timezone = Europe/Paris >> $INI
+        echo memory_limit = -1 >> $INI
+        echo session.gc_probability = 0 >> $INI
+        echo opcache.enable_cli = 1 >> $INI
+        echo apc.enable_cli = 1 >> $INI
+        echo extension = memcached.so >> $INI
+    done
+    
 install: composer update --no-interaction
 
 script:
