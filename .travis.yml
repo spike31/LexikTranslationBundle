@@ -1,16 +1,10 @@
 language: php
 
-sudo: false
+dist: trusty
 
 cache:
   directories:
     - $HOME/.composer/cache/files
-
-php:
-  - 7.0
-  - 7.1
-  - 7.2
-  - 7.3
 
 env:
   global:
@@ -20,7 +14,7 @@ env:
 matrix:
   include:
     - php: 5.6
-      env: MONGO_EXTENSION="mongo.so" SYMFONY_VERSION="symfony/lts:^2" DB=pdo_mysql DB_USER=root DB_NAME=lexik_test
+      env: SYMFONY_VERSION="symfony/lts:^2" DB=pdo_mysql DB_USER=root DB_NAME=lexik_test
     - php: 7.1
       env: SYMFONY_VERSION="symfony/lts:^3" DB=pdo_mysql DB_USER=root DB_NAME=lexik_test
   fast_finish: true
@@ -30,18 +24,15 @@ services:
     - mysql
 
 before_install:
-    - echo "extension = $MONGO_EXTENSION" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
-    - echo 'date.timezone = "Europe/Paris"' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
-    - echo 'memory_limit = -1' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
-
-before_script:
+  - echo "extension = $MONGO_EXTENSION" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+  - echo 'date.timezone = "Europe/Paris"' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+  - echo 'memory_limit = -1' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
   - composer config platform.ext-mongo 1.6.16
-  - if [ "$SYMFONY_VERSION" != "" ]; then travis_wait composer require --no-update $SYMFONY_VERSION; fi;
-  - travis_wait composer update --prefer-dist --no-interaction $COMPOSER_FLAGS
-  - if ! [[ $TRAVIS_PHP_VERSION =~ ^5 ]]; then composer require alcaeus/mongo-php-adapter; fi;
+  - if [ "$DEPENDENCIES" = "dev" ]; then perl -pi -e 's/^}$/,"minimum-stability":"dev"}/' composer.json; fi;
+  - if [ "$SYMFONY_VERSION" != "" ]; then composer require "symfony/symfony:${SYMFONY_VERSION}" --no-update; fi;
+  - if ! [[ $TRAVIS_PHP_VERSION =~ ^5 ]]; then composer require alcaeus/mongo-php-adapter --no-update; fi;
 
-install:
-    - if [ -x .travis/install.sh ]; then .travis/install.sh; fi;
+install: composer update --no-interaction
 
 script:
-    - php vendor/bin/phpunit -v
+    - php vendor/bin/phpunit --coverage-text
