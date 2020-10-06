@@ -39,4 +39,4 @@ before_script:
 
 script:
   - composer validate --no-check-lock --strict
-  - php vendor/bin/phpunit --coverage-text
+  - php vendor/bin/phpunit -v
